@@ -42,8 +42,6 @@ export default function RegisterPage() {
     setAvailability('unknown');
 
     try {
-      console.log('Checking availability for:', name);
-
       if (!REGISTRAR_ADDRESS) {
         setStatus('Registrar address not configured. Set NEXT_PUBLIC_REGISTRAR_ADDRESS');
         return;
@@ -241,10 +239,15 @@ export default function RegisterPage() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Enter your desired name (e.g., alice)"
-                    className="w-full rounded-xl border-2 border-pink-200 px-4 py-4 text-lg focus:ring-4 focus:ring-pink-300/50 focus:border-pink-400 transition-all duration-200 bg-white"
+                    className="w-full rounded-xl border-2 border-pink-200 px-4 py-4 text-lg focus:ring-4 focus:ring-pink-300/50 focus:border-pink-400 transition-all duration-200 bg-white pr-20"
                   />
-                  <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-pink-400 font-medium">
-                    .iopn
+                  <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
+                    {availability !== 'unknown' && name.trim() && (
+                      <span className={`text-xl ${availability === 'available' ? 'text-green-500' : availability === 'taken' ? 'text-red-500' : 'text-orange-500'}`}>
+                        {availability === 'available' ? '✓' : availability === 'taken' ? '✗' : '⚠'}
+                      </span>
+                    )}
+                    <span className="text-pink-400 font-medium">.iopn</span>
                   </div>
                 </div>
               </div>
