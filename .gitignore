@@ -41,3 +41,15 @@ yarn-error.log*
 next-env.d.ts
 .env
 .env
+
+# verification-related (do not commit)
+scripts/verify-contract.js
+scripts/prepare-verification.js
+scripts/flatten.js
+artifacts/verification.json
+artifacts/deployment.json
+artifacts/contract-verification-data.json
+contracts/*.flat.sol
+flattened-contract.sol
+solidity-flattener/
+scripts/__pycache__/

@@ -41,6 +41,23 @@ export default function RegisterPage() {
     setAvailability('unknown');
 
     try {
+      // 1) Try Python-backed API pre-validation (dev/local only)
+      try {
+        const resp = await fetch('/api/check-name', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name })
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data && data.is_valid === false) {
+            setStatus(data.reason || 'Invalid name');
+            setAvailability('invalid');
+            return; // stop early if invalid
+          }
+        }
+      } catch { /* ignore and fallback to client-side checks */ }
+
       if (!REGISTRAR_ADDRESS) {
         setStatus('Registrar address not configured');
         setAvailability('unknown');
@@ -63,7 +80,7 @@ export default function RegisterPage() {
         return;
       }
 
-      // Basic client-side validation
+      // 2) Basic client-side validation (fallback and also runs in prod)
       if (normalized.length < 3 || normalized.length > 32) {
         setStatus('Name must be 3-32 characters long');
         setAvailability('invalid');
@@ -78,7 +95,7 @@ export default function RegisterPage() {
         return;
       }
 
-      // check availability on chain
+  // 3) check availability on chain
       const tokenId = await contract.nameToTokenId(normalized);
 
       if (tokenId && tokenId !== BigInt(0)) {
@@ -117,19 +134,21 @@ export default function RegisterPage() {
         return;
       }
 
-      const registrarAbi = await getRegistrarAbi();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const provider = new ethers.BrowserProvider((window as any).ethereum);
-      const signer = await provider.getSigner();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const contract = new ethers.Contract(REGISTRAR_ADDRESS, registrarAbi as any, signer);
+  const registrarAbi = await getRegistrarAbi();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const provider = new ethers.BrowserProvider((window as any).ethereum);
+  const signer = await provider.getSigner();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const contract = new ethers.Contract(REGISTRAR_ADDRESS, registrarAbi as any, signer);
 
-      const normalized = name.trim().toLowerCase();
-      const price = calculateRegistrationPrice(normalized);
-      const priceWei = ethers.parseEther(price.toString());
+  const normalized = name.trim().toLowerCase();
 
-      setStatus(`Sending registration transaction (fee: ${price} OPN)...`);
-      const tx = await contract.register(normalized, { value: priceWei });
+  // IMPORTANT: use on-chain fee, not UI-estimated price
+  const onchainFeeWei: bigint = await contract.registrationFeeWei();
+  const onchainFee = ethers.formatEther(onchainFeeWei);
+
+  setStatus(`Sending registration transaction (on-chain fee: ${onchainFee} OPN)...`);
+  const tx = await contract.register(normalized, { value: onchainFeeWei });
       setTxHash(tx.hash);
       setStatus('Waiting for confirmation...');
       await tx.wait();
