@@ -8,26 +8,54 @@ export default function MyNamesPage() {
   const [name, setName] = useState('');
   const [status, setStatus] = useState('');
   const [owner, setOwner] = useState<string | null>(null);
+  const [searchMode, setSearchMode] = useState<'my-domains' | 'search-any'>('my-domains');
 
   const checkOwner = async () => {
-    setStatus('Checking...');
+    setStatus('Searching...');
     try {
-  if (!REGISTRAR_ADDRESS) { setStatus('Registrar address not configured'); return; }
-  const registrarAbi = await getRegistrarAbi();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const provider = new ethers.BrowserProvider((window as any).ethereum);
-  const signer = await provider.getSigner();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const contract = new ethers.Contract(REGISTRAR_ADDRESS, registrarAbi as any, signer);
+      if (!REGISTRAR_ADDRESS) { setStatus('Registrar address not configured'); return; }
+      const registrarAbi = await getRegistrarAbi();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const provider = new ethers.BrowserProvider((window as any).ethereum);
+      const signer = await provider.getSigner();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const contract = new ethers.Contract(REGISTRAR_ADDRESS, registrarAbi as any, signer);
 
       const normalized = name.trim().toLowerCase();
       if (!normalized) { setStatus('Enter a name'); return; }
 
-      const tokenId = await contract.nameToTokenId(normalized);
-      if (!tokenId || tokenId === BigInt(0)) { setStatus('Name not registered'); setOwner(null); return; }
-      const o = await contract.ownerOf(tokenId);
-      setOwner(o);
-      setStatus('');
+      if (searchMode === 'my-domains') {
+        // Check if the connected wallet owns this domain
+        const tokenId = await contract.nameToTokenId(normalized);
+        if (!tokenId || tokenId === BigInt(0)) {
+          setStatus('Domain not registered');
+          setOwner(null);
+          return;
+        }
+
+        const domainOwner = await contract.ownerOf(tokenId);
+        const userAddress = await signer.getAddress();
+
+        if (domainOwner.toLowerCase() === userAddress.toLowerCase()) {
+          setOwner(domainOwner);
+          setStatus('You own this domain!');
+        } else {
+          setOwner(domainOwner);
+          setStatus(`Domain owned by: ${domainOwner}`);
+        }
+      } else {
+        // Search any domain - just check if it exists and who owns it
+        const tokenId = await contract.nameToTokenId(normalized);
+        if (!tokenId || tokenId === BigInt(0)) {
+          setStatus('Domain not registered');
+          setOwner(null);
+          return;
+        }
+
+        const domainOwner = await contract.ownerOf(tokenId);
+        setOwner(domainOwner);
+        setStatus(`Domain registered to: ${domainOwner}`);
+      }
     } catch (err) {
       setStatus('Error: ' + (err instanceof Error ? err.message : String(err)));
     }
@@ -40,15 +68,44 @@ export default function MyNamesPage() {
         <div className="max-w-3xl mx-auto space-y-6">
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
             <span className="bg-gradient-to-r from-green-400 via-yellow-400 to-pink-400 bg-clip-text text-transparent">
-              My .iopn
+              {searchMode === 'my-domains' ? 'My .iopn' : 'Search .iopn'}
             </span>
             <br />
-            <span className="text-gray-900 dark:text-white">Domains</span>
+            <span className="text-gray-800">Domains</span>
           </h1>
 
-          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Check ownership and manage your registered .iopn domain names on the IOPN network.
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            {searchMode === 'my-domains'
+              ? 'Check ownership and manage your registered .iopn domain names on the IOPN network.'
+              : 'Search and discover registered .iopn domain names and their owners.'
+            }
           </p>
+
+          {/* Mode Toggle */}
+          <div className="flex justify-center">
+            <div className="bg-white/80 backdrop-blur-sm rounded-full p-1 border border-green-200/50 shadow-lg">
+              <button
+                onClick={() => setSearchMode('my-domains')}
+                className={`px-6 py-2 rounded-full font-medium transition-all duration-200 ${
+                  searchMode === 'my-domains'
+                    ? 'bg-green-400 text-white shadow-md'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                My Domains
+              </button>
+              <button
+                onClick={() => setSearchMode('search-any')}
+                className={`px-6 py-2 rounded-full font-medium transition-all duration-200 ${
+                  searchMode === 'search-any'
+                    ? 'bg-pink-400 text-white shadow-md'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Search All
+              </button>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -57,7 +114,9 @@ export default function MyNamesPage() {
         <div className="max-w-2xl mx-auto">
           <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-green-200/50 overflow-hidden">
             <div className="bg-gradient-to-r from-green-300 via-yellow-300 to-pink-300 p-6">
-              <h2 className="text-2xl font-bold text-white text-center">Check Domain Ownership</h2>
+              <h2 className="text-2xl font-bold text-white text-center">
+                {searchMode === 'my-domains' ? 'Check Domain Ownership' : 'Search Any Domain'}
+              </h2>
             </div>
 
             <div className="p-8">
@@ -87,7 +146,7 @@ export default function MyNamesPage() {
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
-                    Check Owner
+                    {searchMode === 'my-domains' ? 'Check My Ownership' : 'Search Domain'}
                   </div>
                 </button>
               </div>
@@ -117,7 +176,17 @@ export default function MyNamesPage() {
                   </div>
                   <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-green-200 dark:border-green-700">
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Owner Address:</p>
-                    <p className="font-mono text-sm text-gray-900 dark:text-gray-100 break-all">{owner}</p>
+                    <p className="font-mono text-sm text-gray-900 dark:text-gray-100 break-all mb-2">{owner}</p>
+                    <div className="flex gap-2">
+                      <a
+                        href={`https://testnet.iopn.tech/address/${owner}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-green-600 hover:text-green-700 underline"
+                      >
+                        View on Explorer →
+                      </a>
+                    </div>
                   </div>
                 </div>
               )}
@@ -127,21 +196,40 @@ export default function MyNamesPage() {
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  How to Use
+                  {searchMode === 'my-domains' ? 'How to Use' : 'Search Information'}
                 </h3>
                 <ul className="space-y-2 text-sm text-green-700">
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                    Enter any .iopn domain name to check its current owner
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                    If registered, you'll see the owner's wallet address
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                    Unregistered domains show "Name not registered"
-                  </li>
+                  {searchMode === 'my-domains' ? (
+                    <>
+                      <li className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                        Enter any .iopn domain name to check if you own it
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                        If registered to your address, you'll see ownership confirmation
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                        Unregistered domains show "Domain not registered"
+                      </li>
+                    </>
+                  ) : (
+                    <>
+                      <li className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                        Search for any registered .iopn domain name
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                        See who owns the domain and current registration status
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                        Perfect for checking domain availability before registration
+                      </li>
+                    </>
+                  )}
                 </ul>
               </div>
             </div>

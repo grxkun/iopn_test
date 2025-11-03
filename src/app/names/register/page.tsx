@@ -18,24 +18,51 @@ export default function RegisterPage() {
     setAvailability('unknown');
 
     try {
+      console.log('Checking availability for:', name);
+
       if (!REGISTRAR_ADDRESS) {
         setStatus('Registrar address not configured. Set NEXT_PUBLIC_REGISTRAR_ADDRESS');
         return;
       }
-      if (!window.ethereum) {
-        setStatus('Please connect a wallet');
-        return;
-      }
 
       const registrarAbi = await getRegistrarAbi();
+      console.log('Loaded registrar ABI:', registrarAbi.length, 'methods');
+
+      // Try to use wallet provider if available and connected, otherwise use read-only provider
+      let provider;
+      let isWalletConnected = false;
+
+      if (window.ethereum) {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const walletProvider = new ethers.BrowserProvider((window as any).ethereum);
+          const network = await walletProvider.getNetwork();
+          console.log('Wallet connected to network:', network);
+
+          // Check if user is on IOPN testnet (chain ID 984)
+          if (network.chainId === BigInt(984)) {
+            provider = walletProvider;
+            isWalletConnected = true;
+            console.log('Using wallet provider for availability check');
+          }
+        } catch (walletError) {
+          console.log('Wallet not connected or wrong network, falling back to read-only provider');
+        }
+      }
+
+      // If wallet is not connected or not on correct network, use read-only provider
+      if (!provider) {
+        provider = new ethers.JsonRpcProvider('https://testnet-rpc.iopn.tech');
+        console.log('Using read-only provider for availability check');
+      }
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const provider = new ethers.BrowserProvider((window as any).ethereum);
-      const signer = await provider.getSigner();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const contract = new ethers.Contract(REGISTRAR_ADDRESS, registrarAbi as any, signer);
+      const contract = new ethers.Contract(REGISTRAR_ADDRESS, registrarAbi as any, provider);
 
       // normalize name
       const normalized = name.trim().toLowerCase();
+      console.log('Normalized name:', normalized);
+
       if (!normalized) {
         setStatus('Please enter a name');
         setAvailability('invalid');
@@ -57,16 +84,32 @@ export default function RegisterPage() {
         return;
       }
 
+      console.log('Calling nameToTokenId for:', normalized);
       // check availability on chain
       const tokenId = await contract.nameToTokenId(normalized);
+      console.log('Token ID result:', tokenId, typeof tokenId);
+
       if (tokenId && tokenId !== BigInt(0)) {
-        setStatus('Name is already registered');
+        // Name is registered, let's also check the owner
+        try {
+          const owner = await contract.ownerOf(tokenId);
+          setStatus(`Name is registered to: ${owner}`);
+        } catch (ownerError) {
+          setStatus('Name is already registered');
+        }
         setAvailability('taken');
       } else {
         setStatus('Name is available!');
         setAvailability('available');
       }
+
+      // Add note about connection status
+      if (!isWalletConnected) {
+        setStatus(prev => prev + ' (checked via public RPC)');
+      }
+
     } catch (err) {
+      console.error('Error checking availability:', err);
       setStatus('Error checking availability: ' + (err instanceof Error ? err.message : String(err)));
       setAvailability('unknown');
     } finally {
