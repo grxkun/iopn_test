@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import { REGISTRAR_ADDRESS, getRegistrarAbi } from '@/lib/contracts';
 
@@ -11,6 +11,30 @@ export default function RegisterPage() {
   const [txHash, setTxHash] = useState('');
   const [isChecking, setIsChecking] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
+
+  // Calculate registration price based on name length
+  const calculateRegistrationPrice = (domainName: string): number => {
+    const length = domainName.trim().length;
+    if (length === 1) return 6;
+    if (length === 2) return 4;
+    if (length === 3) return 3;
+    return 2; // 4 and beyond
+  };
+
+  // Auto-check availability when name changes (debounced)
+  useEffect(() => {
+    if (!name.trim()) {
+      setAvailability('unknown');
+      setStatus('');
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      checkAvailability();
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [name]);
 
   const checkAvailability = async () => {
     setIsChecking(true);
@@ -99,7 +123,8 @@ export default function RegisterPage() {
         }
         setAvailability('taken');
       } else {
-        setStatus('Name is available!');
+        const price = calculateRegistrationPrice(normalized);
+        setStatus(`Name is available! Registration cost: ${price} OPN`);
         setAvailability('available');
       }
 
@@ -144,13 +169,11 @@ export default function RegisterPage() {
       const contract = new ethers.Contract(REGISTRAR_ADDRESS, registrarAbi as any, signer);
 
       const normalized = name.trim().toLowerCase();
+      const price = calculateRegistrationPrice(normalized);
+      const priceWei = ethers.parseEther(price.toString());
 
-      // get fee
-      const feeWei = await contract.registrationFeeWei();
-      const feeEth = ethers.formatEther(feeWei);
-
-      setStatus(`Sending registration transaction (fee: ${feeEth} OPN)...`);
-      const tx = await contract.register(normalized, { value: feeWei });
+      setStatus(`Sending registration transaction (fee: ${price} OPN)...`);
+      const tx = await contract.register(normalized, { value: priceWei });
       setTxHash(tx.hash);
       setStatus('Waiting for confirmation...');
       await tx.wait();
@@ -216,11 +239,7 @@ export default function RegisterPage() {
                 <div className="relative">
                   <input
                     value={name}
-                    onChange={(e) => {
-                      setName(e.target.value);
-                      setAvailability('unknown');
-                      setStatus('');
-                    }}
+                    onChange={(e) => setName(e.target.value)}
                     placeholder="Enter your desired name (e.g., alice)"
                     className="w-full rounded-xl border-2 border-pink-200 px-4 py-4 text-lg focus:ring-4 focus:ring-pink-300/50 focus:border-pink-400 transition-all duration-200 bg-white"
                   />
@@ -307,7 +326,7 @@ export default function RegisterPage() {
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  Registration Requirements
+                  Registration Requirements & Pricing
                 </h3>
                 <ul className="space-y-2 text-sm text-pink-700">
                   <li className="flex items-center gap-2">
@@ -320,7 +339,11 @@ export default function RegisterPage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="w-1.5 h-1.5 bg-pink-500 rounded-full"></span>
-                    Registration requires a small fee in OPN tokens
+                    <strong>Pricing:</strong> 1 char = 6 OPN, 2 chars = 4 OPN, 3 chars = 3 OPN, 4+ chars = 2 OPN
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-pink-500 rounded-full"></span>
+                    All registration revenue goes to the IOPN treasury
                   </li>
                 </ul>
               </div>

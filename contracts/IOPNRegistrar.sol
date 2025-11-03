@@ -13,6 +13,7 @@ contract IOPNRegistrar is ERC721, Ownable {
     mapping(bytes32 => uint256) public nameHashToTokenId;
     mapping(uint256 => string) public tokenIdToName;
     uint256 public registrationFeeWei;
+    address public constant REVENUE_RECIPIENT = 0x28416B29B5Ab1D49F2F4659Bb3C3b63458eE1e2e;
 
     constructor(string memory name_, string memory symbol_, uint256 _registrationFeeWei) ERC721(name_, symbol_) Ownable(msg.sender) {
         registrationFeeWei = _registrationFeeWei;
@@ -43,10 +44,14 @@ contract IOPNRegistrar is ERC721, Ownable {
         tokenIdToName[tokenId] = name;
         _safeMint(msg.sender, tokenId);
 
+        // Send registration fee directly to revenue recipient
+        (bool sent, ) = REVENUE_RECIPIENT.call{ value: registrationFeeWei }("");
+        require(sent, "fee transfer failed");
+
         uint256 excess = msg.value - registrationFeeWei;
         if (excess > 0) {
-            (bool sent, ) = msg.sender.call{ value: excess }("");
-            require(sent, "refund failed");
+            (bool refundSent, ) = msg.sender.call{ value: excess }("");
+            require(refundSent, "refund failed");
         }
         return tokenId;
     }

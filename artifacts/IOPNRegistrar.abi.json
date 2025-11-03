@@ -240,6 +240,19 @@
     "type": "event"
   },
   {
+    "inputs": [],
+    "name": "REVENUE_RECIPIENT",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
