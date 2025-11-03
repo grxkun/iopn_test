@@ -139,72 +139,152 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen p-6">
-      <div className="max-w-lg mx-auto bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h1 className="text-2xl font-bold mb-4">Register .iopn Name</h1>
+    <div className="min-h-screen bg-gradient-to-b from-pink-50 via-yellow-50 to-purple-50">
+      {/* Hero Section */}
+      <section className="container mx-auto px-4 pt-20 pb-16 text-center">
+        <div className="max-w-3xl mx-auto space-y-6">
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
+            <span className="bg-gradient-to-r from-pink-400 via-yellow-400 to-purple-400 bg-clip-text text-transparent">
+              Register Your
+            </span>
+            <br />
+            <span className="text-gray-900 dark:text-white">.iopn Domain</span>
+          </h1>
 
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">Name (without .iopn)</label>
-          <input
-            value={name}
-            onChange={(e) => {
-              setName(e.target.value);
-              setAvailability('unknown');
-              setStatus('');
-            }}
-            placeholder="Enter name (3-32 chars, lowercase letters & numbers only)"
-            className="w-full rounded border px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-          />
+          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+            Claim your unique identity on the IOPN network. Register your .iopn name and establish your presence in the decentralized web.
+          </p>
         </div>
+      </section>
 
-        {availability !== 'unknown' && (
-          <div className={`mb-4 p-3 rounded ${getAvailabilityColor()} bg-opacity-10 border`}>
-            <p className="flex items-center gap-2">
-              <span>{getAvailabilityIcon()}</span>
-              <span>{status}</span>
-            </p>
+      {/* Registration Form */}
+      <section className="container mx-auto px-4 pb-20">
+        <div className="max-w-2xl mx-auto">
+          <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-pink-200/50 overflow-hidden">
+            <div className="bg-gradient-to-r from-pink-300 via-yellow-300 to-purple-300 p-6">
+              <h2 className="text-2xl font-bold text-white text-center">Domain Registration</h2>
+            </div>
+
+            <div className="p-8">
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                  Choose Your .iopn Name
+                </label>
+                <div className="relative">
+                  <input
+                    value={name}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      setAvailability('unknown');
+                      setStatus('');
+                    }}
+                    placeholder="Enter your desired name (e.g., alice)"
+                    className="w-full rounded-xl border-2 border-pink-200 px-4 py-4 text-lg focus:ring-4 focus:ring-pink-300/50 focus:border-pink-400 transition-all duration-200 bg-white"
+                  />
+                  <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-pink-400 font-medium">
+                    .iopn
+                  </div>
+                </div>
+              </div>
+
+              {availability !== 'unknown' && (
+                <div className={`mb-6 p-4 rounded-xl border-2 transition-all duration-200 ${
+                  availability === 'available'
+                    ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-800 dark:text-green-300'
+                    : availability === 'taken'
+                    ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300'
+                    : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800 text-orange-800 dark:text-orange-300'
+                }`}>
+                  <div className="flex items-center gap-3">
+                    <div className="text-2xl">{getAvailabilityIcon()}</div>
+                    <div>
+                      <p className="font-semibold text-lg">{status}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                <button
+                  onClick={checkAvailability}
+                  disabled={isChecking || !name.trim()}
+                  className="flex-1 px-6 py-4 bg-gradient-to-r from-pink-400 to-pink-500 text-white rounded-xl font-semibold text-lg hover:from-pink-500 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                >
+                  {isChecking ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Checking...
+                    </div>
+                  ) : (
+                    'Check Availability'
+                  )}
+                </button>
+
+                <button
+                  onClick={register}
+                  disabled={isRegistering || availability !== 'available'}
+                  className="flex-1 px-6 py-4 bg-gradient-to-r from-purple-400 to-purple-500 text-white rounded-xl font-semibold text-lg hover:from-purple-500 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                >
+                  {isRegistering ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Registering...
+                    </div>
+                  ) : (
+                    'Register Domain'
+                  )}
+                </button>
+              </div>
+
+              {txHash && (
+                <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border-2 border-green-200 dark:border-green-800">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="text-green-600 dark:text-green-400">
+                      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <p className="font-semibold text-green-800 dark:text-green-300">Registration Successful!</p>
+                  </div>
+                  <p className="text-sm text-green-700 dark:text-green-400">
+                    Transaction: <a
+                      href={`https://testnet-explorer.iopn.tech/tx/${txHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline hover:text-green-900 dark:hover:text-green-200 font-mono break-all"
+                    >
+                      {txHash}
+                    </a>
+                  </p>
+                </div>
+              )}
+
+              <div className="bg-pink-50 rounded-xl p-6 border border-pink-200">
+                <h3 className="font-semibold text-pink-800 mb-3 flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Registration Requirements
+                </h3>
+                <ul className="space-y-2 text-sm text-pink-700">
+                  <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-pink-500 rounded-full"></span>
+                    Names must be 3-32 characters long
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-pink-500 rounded-full"></span>
+                    Only lowercase letters (a-z) and numbers (0-9) allowed
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-pink-500 rounded-full"></span>
+                    Registration requires a small fee in OPN tokens
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
-        )}
-
-        <div className="flex gap-2 mb-4">
-          <button
-            onClick={checkAvailability}
-            disabled={isChecking || !name.trim()}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isChecking ? 'Checking...' : 'Check Availability'}
-          </button>
-
-          <button
-            onClick={register}
-            disabled={isRegistering || availability !== 'available'}
-            className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isRegistering ? 'Registering...' : 'Register'}
-          </button>
         </div>
-
-        {txHash && (
-          <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded">
-            <p className="text-sm text-gray-600 dark:text-gray-300">
-              Transaction: <a
-                href={`https://explorer.iopn.tech/tx/${txHash}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-indigo-600 hover:text-indigo-800 underline"
-              >
-                {txHash}
-              </a>
-            </p>
-          </div>
-        )}
-
-        <div className="text-xs text-gray-500 dark:text-gray-400 mt-4">
-          <p>• Names must be 3-32 characters long</p>
-          <p>• Only lowercase letters (a-z) and numbers (0-9) allowed</p>
-          <p>• Registration requires a small fee in OPN tokens</p>
-        </div>
-      </div>
+      </section>
     </div>
   );
 }
