@@ -68,7 +68,7 @@ export default function MyNamesPage() {
         <div className="max-w-3xl mx-auto space-y-6">
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
             <span className="bg-gradient-to-r from-green-400 via-yellow-400 to-pink-400 bg-clip-text text-transparent">
-              {searchMode === 'my-domains' ? 'My .iopn' : 'Search .iopn'}
+              {searchMode === 'my-domains' ? 'My .opn' : 'Search .opn'}
             </span>
             <br />
             <span className="text-gray-800">Domains</span>
@@ -76,8 +76,8 @@ export default function MyNamesPage() {
 
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             {searchMode === 'my-domains'
-              ? 'Check ownership and manage your registered .iopn domain names on the IOPN network.'
-              : 'Search and discover registered .iopn domain names and their owners.'
+              ? 'Check ownership and manage your registered .opn domain names on the IOPN network.'
+              : 'Search and discover registered .opn domain names and their owners.'
             }
           </p>
 
@@ -122,7 +122,7 @@ export default function MyNamesPage() {
             <div className="p-8">
               <div className="mb-6">
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                  Enter .iopn Domain Name
+                  Enter .opn Domain Name
                 </label>
                 <div className="relative">
                   <input
@@ -132,7 +132,7 @@ export default function MyNamesPage() {
                     className="w-full rounded-xl border-2 border-green-200 px-4 py-4 text-lg focus:ring-4 focus:ring-green-300/50 focus:border-green-400 transition-all duration-200 bg-white"
                   />
                   <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-green-400 font-medium">
-                    .iopn
+                    .opn
                   </div>
                 </div>
               </div>
@@ -203,7 +203,7 @@ export default function MyNamesPage() {
                     <>
                       <li className="flex items-center gap-2">
                         <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                        Enter any .iopn domain name to check if you own it
+                        Enter any .opn domain name to check if you own it
                       </li>
                       <li className="flex items-center gap-2">
                         <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
@@ -218,7 +218,7 @@ export default function MyNamesPage() {
                     <>
                       <li className="flex items-center gap-2">
                         <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                        Search for any registered .iopn domain name
+                        Search for any registered .opn domain name
                       </li>
                       <li className="flex items-center gap-2">
                         <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>

@@ -31,7 +31,7 @@ export default function RegisterPage() {
 
     const timeoutId = setTimeout(() => {
       checkAvailability();
-    }, 500); // 500ms debounce
+    }, 200); // 200ms debounce for more responsive checking
 
     return () => clearTimeout(timeoutId);
   }, [name]);
@@ -171,11 +171,11 @@ export default function RegisterPage() {
               Register Your
             </span>
             <br />
-            <span className="text-gray-900 dark:text-white">.iopn Domain</span>
+            <span className="text-gray-900 dark:text-white">.opn Domain</span>
           </h1>
 
           <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Claim your unique identity on the IOPN network. Register your .iopn name and establish your presence in the decentralized web.
+            Claim your unique identity on the IOPN network. Register your .opn name and establish your presence in the decentralized web.
           </p>
         </div>
       </section>
@@ -191,7 +191,7 @@ export default function RegisterPage() {
             <div className="p-8">
               <div className="mb-6">
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                  Choose Your .iopn Name
+                  Choose Your .opn Name
                 </label>
                 <div className="relative">
                   <input
@@ -206,7 +206,7 @@ export default function RegisterPage() {
                         {availability === 'available' ? '✓' : availability === 'taken' ? '✗' : '⚠'}
                       </span>
                     )}
-                    <span className="text-pink-400 font-medium">.iopn</span>
+                    <span className="text-pink-400 font-medium">.opn</span>
                   </div>
                 </div>
               </div>

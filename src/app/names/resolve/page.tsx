@@ -39,14 +39,14 @@ export default function ResolvePage() {
         <div className="max-w-3xl mx-auto space-y-6">
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
             <span className="bg-gradient-to-r from-orange-400 via-pink-400 to-purple-400 bg-clip-text text-transparent">
-              Resolve .iopn
+              Resolve .opn
             </span>
             <br />
             <span className="text-gray-900 dark:text-white">Domains</span>
           </h1>
 
           <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Look up wallet addresses and associated information for any registered .iopn domain name.
+            Look up wallet addresses and associated information for any registered .opn domain name.
           </p>
         </div>
       </section>
@@ -62,7 +62,7 @@ export default function ResolvePage() {
             <div className="p-8">
               <div className="mb-6">
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                  Enter .iopn Domain Name
+                  Enter .opn Domain Name
                 </label>
                 <div className="relative">
                   <input
@@ -72,7 +72,7 @@ export default function ResolvePage() {
                     className="w-full rounded-xl border-2 border-orange-200 px-4 py-4 text-lg focus:ring-4 focus:ring-orange-300/50 focus:border-orange-400 transition-all duration-200 bg-white"
                   />
                   <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-orange-400 font-medium">
-                    .iopn
+                    .opn
                   </div>
                 </div>
               </div>
@@ -138,7 +138,7 @@ export default function ResolvePage() {
                 <ul className="space-y-2 text-sm text-orange-700">
                   <li className="flex items-center gap-2">
                     <span className="w-1.5 h-1.5 bg-orange-500 rounded-full"></span>
-                    Converts human-readable .iopn names to wallet addresses
+                    Converts human-readable .opn names to wallet addresses
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="w-1.5 h-1.5 bg-orange-500 rounded-full"></span>
