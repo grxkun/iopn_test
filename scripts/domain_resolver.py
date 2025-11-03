@@ -74,12 +74,16 @@ def main():
     resolver = w3.eth.contract(address=RESOLVER_ADDRESS, abi=RESOLVER_ABI)
 
     # Test domain resolution
-    test_domains = ["alice", "bob", "test123", "myname"]
+    print("\n🔍 Testing Domain Resolution (0.opn to 50.opn, plus my.opn and dev.opn)")
+    print("=" * 70)
 
-    print("\n🔍 Testing Domain Resolution:")
+    # Generate domain list: 0 to 50, plus my and dev
+    domains = [str(i) for i in range(51)] + ['my', 'dev']
+
+    print(f"🔍 Resolving {len(domains)} domain(s):")
     print("=" * 50)
 
-    for domain in test_domains:
+    for domain in domains:
         print(f"\n📝 Checking domain: {domain}.opn")
 
         try:

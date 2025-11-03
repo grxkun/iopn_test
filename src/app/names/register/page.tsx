@@ -15,10 +15,9 @@ export default function RegisterPage() {
   // Calculate registration price based on name length
   const calculateRegistrationPrice = (domainName: string): number => {
     const length = domainName.trim().length;
-    if (length === 1) return 6;
-    if (length === 2) return 4;
     if (length === 3) return 3;
-    return 2; // 4 and beyond
+    if (length === 4) return 2;
+    return 1; // 5 and beyond
   };
 
   // Auto-check availability when name changes (debounced)
@@ -301,7 +300,7 @@ export default function RegisterPage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="w-1.5 h-1.5 bg-pink-500 rounded-full"></span>
-                    <strong>Pricing:</strong> 1 char = 6 OPN, 2 chars = 4 OPN, 3 chars = 3 OPN, 4+ chars = 2 OPN
+                    <strong>Pricing:</strong> 3 chars = 3 OPN, 4 chars = 2 OPN, 5+ chars = 1 OPN
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="w-1.5 h-1.5 bg-pink-500 rounded-full"></span>

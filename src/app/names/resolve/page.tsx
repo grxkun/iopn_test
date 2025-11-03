@@ -120,7 +120,7 @@ export default function ResolvePage() {
                       return (
                         <div key={index} className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-orange-200 dark:border-orange-700">
                           <p className="text-sm text-gray-600 dark:text-gray-400 mb-1 capitalize">{label}:</p>
-                          <p className="font-mono text-sm text-gray-900 dark:text-gray-100 break-all">{value}</p>
+                          <p className="font-mono text-sm text-gray-900 dark:text-gray-200 break-all">{value}</p>
                         </div>
                       );
                     })}
