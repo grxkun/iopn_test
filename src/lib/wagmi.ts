@@ -10,8 +10,8 @@ export const config = getDefaultConfig({
   chains: [
     {
       id: 984,
-      name: 'OPN Testnet',
-      network: 'opn-testnet',
+      name: 'IOPN Testnet',
+      network: 'iopn-testnet',
       nativeCurrency: {
         decimals: 18,
         name: 'OPN',
@@ -26,7 +26,7 @@ export const config = getDefaultConfig({
         },
       },
       blockExplorers: {
-        default: { name: 'IOPN Explorer', url: 'https://testnet-explorer.iopn.tech' }, // Assuming, replace if known
+        default: { name: 'IOPN Explorer', url: 'https://testnet.iopn.tech' },
       },
       testnet: true,
     },
