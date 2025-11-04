@@ -4,9 +4,10 @@ interface DomainNFTProps {
   name: string;
   address: string;
   text: string;
+  showOwnerAddress?: boolean;
 }
 
-export default function DomainNFT({ name, address, text }: DomainNFTProps) {
+export default function DomainNFT({ name, address, text, showOwnerAddress = true }: DomainNFTProps) {
   const isPremium = name.length === 3;
   const isRotating = name.length > 3;
 
@@ -80,16 +81,18 @@ export default function DomainNFT({ name, address, text }: DomainNFTProps) {
         </div>
 
         <div className="space-y-3">
-          <div className={`rounded-lg p-3 shadow-inner ${
-            isPremium ? 'bg-yellow-100' : 'bg-gray-200'
-          }`}>
-            <p className={`text-xs uppercase tracking-wide ${
-              isPremium ? 'text-yellow-800' : 'text-gray-700'
-            }`}>Owner Address</p>
-            <p className={`font-mono text-sm break-all ${
-              isPremium ? 'text-yellow-900' : 'text-gray-900'
-            }`}>{address}</p>
-          </div>
+          {showOwnerAddress && (
+            <div className={`rounded-lg p-3 shadow-inner ${
+              isPremium ? 'bg-yellow-100' : 'bg-gray-200'
+            }`}>
+              <p className={`text-xs uppercase tracking-wide ${
+                isPremium ? 'text-yellow-800' : 'text-gray-700'
+              }`}>Owner Address</p>
+              <p className={`font-mono text-sm break-all ${
+                isPremium ? 'text-yellow-900' : 'text-gray-900'
+              }`}>{address}</p>
+            </div>
+          )}
 
           {text && (
             <div className={`rounded-lg p-3 shadow-inner ${

@@ -312,6 +312,7 @@ export default function MyNamesPage() {
                         name={domain.name}
                         address={domain.owner}
                         text={domain.text || ''}
+                        showOwnerAddress={false}
                       />
                     ))}
                   </div>
