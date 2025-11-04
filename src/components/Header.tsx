@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import ThemeToggle from '@/components/ThemeToggle';
+import Logo from '@/components/Logo';
 
 export default function Header() {
   return (
@@ -10,7 +11,7 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
           <div className="flex items-center gap-6">
-            <Link href="/" className="text-2xl font-bold text-gray-900 dark:text-white">IOPN Platform</Link>
+            <Logo />
             <nav className="hidden md:flex items-center gap-4">
               <Link href="/names/register" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
                 Register

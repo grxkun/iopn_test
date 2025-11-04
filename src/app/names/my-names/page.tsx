@@ -2,11 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
-import { REGISTRAR_ADDRESS, getRegistrarAbi } from '@/lib/contracts';
+import { REGISTRAR_ADDRESS, getRegistrarAbi, getResolverAbi } from '@/lib/contracts';
+import DomainNFT from '@/components/DomainNFT';
 
 interface OwnedDomain {
   name: string;
   tokenId: string;
+  owner: string;
+  text?: string;
 }
 
 export default function MyNamesPage() {
@@ -68,9 +71,27 @@ export default function MyNamesPage() {
         if (tokenId) {
           try {
             const domainName = await contract.tokenIdToName(tokenId);
+            const ownerAddress = await contract.ownerOf(tokenId);
+            let textRecord = '';
+            try {
+              // Try to get text record from resolver
+              const resolverAbi = await getResolverAbi();
+              const resolverAddress = await contract.resolver();
+              if (resolverAddress && resolverAddress !== '0x0000000000000000000000000000000000000000') {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const resolverContract = new ethers.Contract(resolverAddress, resolverAbi as any, provider);
+                textRecord = await resolverContract.text(domainName, 'description') || '';
+              }
+            } catch (textErr) {
+              // Text record is optional, continue without it
+              console.warn('Failed to get text record for domain:', domainName);
+            }
+            
             domains.push({
               name: domainName,
-              tokenId: tokenId.toString()
+              tokenId: tokenId.toString(),
+              owner: ownerAddress,
+              text: textRecord
             });
           } catch (err) {
             // Skip if tokenIdToName fails
@@ -284,39 +305,14 @@ export default function MyNamesPage() {
                     <span className="ml-3 text-gray-600">Loading owned domains...</span>
                   </div>
                 ) : ownedDomains.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {ownedDomains.map((domain, index) => (
-                      <div key={index} className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border-2 border-blue-200 dark:border-blue-800 p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-semibold text-blue-800 dark:text-blue-300 text-lg">
-                              {domain.name}.opns
-                            </p>
-                            <p className="text-sm text-blue-600 dark:text-blue-400">
-                              Token ID: {domain.tokenId}
-                            </p>
-                          </div>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => {
-                                setName(domain.name);
-                                setSearchMode('my-domains');
-                              }}
-                              className="px-3 py-1 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 transition-colors"
-                            >
-                              Check Details
-                            </button>
-                            <a
-                              href={`https://testnet.iopn.tech/token/${REGISTRAR_ADDRESS}?a=${domain.tokenId}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-3 py-1 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600 transition-colors"
-                            >
-                              View on Explorer
-                            </a>
-                          </div>
-                        </div>
-                      </div>
+                      <DomainNFT
+                        key={index}
+                        name={domain.name}
+                        address={domain.owner}
+                        text={domain.text || ''}
+                      />
                     ))}
                   </div>
                 ) : (
