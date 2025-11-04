@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { WalletProvider } from '@/components/WalletProvider';
+import Header from '@/components/Header';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,7 +30,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <WalletProvider>
-          {children}
+          <Header />
+          <div className="min-h-screen bg-gradient-to-b from-pink-50 via-yellow-50 to-purple-50 dark:from-[#120323] dark:via-[#1b0736] dark:to-[#260a4a] text-gray-900 dark:text-gray-100">
+            {children}
+          </div>
         </WalletProvider>
       </body>
     </html>

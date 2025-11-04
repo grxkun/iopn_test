@@ -15,9 +15,10 @@ export default function RegisterPage() {
   // Calculate registration price based on name length
   const calculateRegistrationPrice = (domainName: string): number => {
     const length = domainName.trim().length;
+    if (length === 1) return 6;
+    if (length === 2) return 4;
     if (length === 3) return 3;
-    if (length === 4) return 2;
-    return 1; // 5 and beyond
+    return 2; // 4 and beyond
   };
 
   // Auto-check availability when name changes (debounced)
@@ -41,23 +42,6 @@ export default function RegisterPage() {
     setAvailability('unknown');
 
     try {
-      // 1) Try Python-backed API pre-validation (dev/local only)
-      try {
-        const resp = await fetch('/api/check-name', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name })
-        });
-        if (resp.ok) {
-          const data = await resp.json();
-          if (data && data.is_valid === false) {
-            setStatus(data.reason || 'Invalid name');
-            setAvailability('invalid');
-            return; // stop early if invalid
-          }
-        }
-      } catch { /* ignore and fallback to client-side checks */ }
-
       if (!REGISTRAR_ADDRESS) {
         setStatus('Registrar address not configured');
         setAvailability('unknown');
@@ -80,7 +64,7 @@ export default function RegisterPage() {
         return;
       }
 
-      // 2) Basic client-side validation (fallback and also runs in prod)
+      // Basic client-side validation
       if (normalized.length < 3 || normalized.length > 32) {
         setStatus('Name must be 3-32 characters long');
         setAvailability('invalid');
@@ -95,7 +79,7 @@ export default function RegisterPage() {
         return;
       }
 
-  // 3) check availability on chain
+      // check availability on chain
       const tokenId = await contract.nameToTokenId(normalized);
 
       if (tokenId && tokenId !== BigInt(0)) {
@@ -134,21 +118,19 @@ export default function RegisterPage() {
         return;
       }
 
-  const registrarAbi = await getRegistrarAbi();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const provider = new ethers.BrowserProvider((window as any).ethereum);
-  const signer = await provider.getSigner();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const contract = new ethers.Contract(REGISTRAR_ADDRESS, registrarAbi as any, signer);
+      const registrarAbi = await getRegistrarAbi();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const provider = new ethers.BrowserProvider((window as any).ethereum);
+      const signer = await provider.getSigner();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const contract = new ethers.Contract(REGISTRAR_ADDRESS, registrarAbi as any, signer);
 
-  const normalized = name.trim().toLowerCase();
+      const normalized = name.trim().toLowerCase();
+      const price = calculateRegistrationPrice(normalized);
+      const priceWei = ethers.parseEther(price.toString());
 
-  // IMPORTANT: use on-chain fee, not UI-estimated price
-  const onchainFeeWei: bigint = await contract.registrationFeeWei();
-  const onchainFee = ethers.formatEther(onchainFeeWei);
-
-  setStatus(`Sending registration transaction (on-chain fee: ${onchainFee} OPN)...`);
-  const tx = await contract.register(normalized, { value: onchainFeeWei });
+      setStatus(`Sending registration transaction (fee: ${price} OPN)...`);
+      const tx = await contract.register(normalized, { value: priceWei });
       setTxHash(tx.hash);
       setStatus('Waiting for confirmation...');
       await tx.wait();
@@ -189,11 +171,11 @@ export default function RegisterPage() {
               Register Your
             </span>
             <br />
-            <span className="text-gray-900 dark:text-white">.opn Domain</span>
+            <span className="text-gray-900 dark:text-white">.opns Domain</span>
           </h1>
 
           <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Claim your unique identity on the IOPN network. Register your .opn name and establish your presence in the decentralized web.
+            Claim your unique identity on the IOPN network. Register your .opns name and establish your presence in the decentralized web.
           </p>
         </div>
       </section>
@@ -209,7 +191,7 @@ export default function RegisterPage() {
             <div className="p-8">
               <div className="mb-6">
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                  Choose Your .opn Name
+                  Choose Your .opns Name
                 </label>
                 <div className="relative">
                   <input
@@ -224,7 +206,7 @@ export default function RegisterPage() {
                         {availability === 'available' ? '✓' : availability === 'taken' ? '✗' : '⚠'}
                       </span>
                     )}
-                    <span className="text-pink-400 font-medium">.opn</span>
+                    <span className="text-pink-400 font-medium">.opns</span>
                   </div>
                 </div>
               </div>
@@ -319,7 +301,7 @@ export default function RegisterPage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="w-1.5 h-1.5 bg-pink-500 rounded-full"></span>
-                    <strong>Pricing:</strong> 3 chars = 3 OPN, 4 chars = 2 OPN, 5+ chars = 1 OPN
+                    <strong>Pricing:</strong> 1 char = 6 OPN, 2 chars = 4 OPN, 3 chars = 3 OPN, 4+ chars = 2 OPN
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="w-1.5 h-1.5 bg-pink-500 rounded-full"></span>

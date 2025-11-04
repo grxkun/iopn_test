@@ -17,7 +17,8 @@ import json
 
 # IOPN Testnet Configuration
 RPC_URL = "https://testnet-rpc.iopn.tech"
-REGISTRAR_ADDRESS = "0xc1F422EF0E93C915730aCc2B80eE6DD46E475978"
+REGISTRAR_ADDRESS = "0x80F58D856432eFB0C0c58468FB2a2a3397fF2da7"  # New address
+OLD_REGISTRAR_ADDRESS = "0xc1F422EF0E93C915730aCc2B80eE6DD46E475978"  # Old address
 RESOLVER_ADDRESS = "0xCA098dC5E77C620Ec7e72E7EB8A24b343bf0EDd1"
 
 # Minimal ABI for the functions we need
@@ -71,30 +72,27 @@ def main():
 
     # Initialize contracts
     registrar = w3.eth.contract(address=REGISTRAR_ADDRESS, abi=REGISTRAR_ABI)
+    old_registrar = w3.eth.contract(address=OLD_REGISTRAR_ADDRESS, abi=REGISTRAR_ABI)
     resolver = w3.eth.contract(address=RESOLVER_ADDRESS, abi=RESOLVER_ABI)
 
     # Test domain resolution
-    print("\n🔍 Testing Domain Resolution (0.opn to 50.opn, plus my.opn and dev.opn)")
-    print("=" * 70)
+    test_domains = ["alice", "bob", "test123", "myname"]
 
-    # Generate domain list: 0 to 50, plus my and dev
-    domains = [str(i) for i in range(51)] + ['my', 'dev']
-
-    print(f"🔍 Resolving {len(domains)} domain(s):")
+    print("\n🔍 Testing Domain Resolution:")
     print("=" * 50)
 
-    for domain in domains:
-        print(f"\n📝 Checking domain: {domain}.opn")
+    for domain in test_domains:
+        print(f"\n📝 Checking domain: {domain}.opns")
 
         try:
             # Check if domain exists (get token ID)
             token_id = registrar.functions.nameToTokenId(domain).call()
 
             if token_id == 0:
-                print(f"❌ Domain {domain}.opn is NOT registered")
+                print(f"❌ Domain {domain}.opns is NOT registered")
                 continue
 
-            print(f"✅ Domain {domain}.opn is registered (Token ID: {token_id})")
+            print(f"✅ Domain {domain}.opns is registered (Token ID: {token_id})")
 
             # Get owner
             owner = registrar.functions.ownerOf(token_id).call()
@@ -121,6 +119,15 @@ def main():
         except Exception as e:
             print(f"❌ Error checking domain {domain}: {e}")
 
+    # Check some token IDs to see if there are any NFTs
+    print("\n🎨 Checking for existing NFTs (New Contract):")
+    print("=" * 45)
+    check_nfts(registrar, "New Contract")
+
+    print("\n🎨 Checking for existing NFTs (Old Contract):")
+    print("=" * 45)
+    check_nfts(old_registrar, "Old Contract")
+
     # Example: Check balance of an address
     print("\n💰 Balance Check Example:")
     print("=" * 30)
@@ -134,6 +141,24 @@ def main():
         print(f"📊 Balance of {checksum_address}: {balance_eth} IOPN")
     except Exception as e:
         print(f"❌ Error getting balance: {e}")
+
+def check_nfts(contract, label):
+    # Check first few token IDs
+    for token_id in range(1, 11):
+        try:
+            owner = contract.functions.ownerOf(token_id).call()
+            print(f"🆔 Token ID {token_id}: owned by {owner}")
+
+            # Try to get the name for this token
+            try:
+                # We need to add the tokenIdToName function to our ABI
+                name = "unknown"  # We'll need to add this function
+                print(f"   📝 Name: {name}")
+            except:
+                print("   📝 Name: (unable to retrieve)")
+        except Exception as e:
+            error_msg = str(e)[:80] + "..." if len(str(e)) > 80 else str(e)
+            print(f"🆔 Token ID {token_id}: not minted or error ({error_msg})")
 
 if __name__ == "__main__":
     main()

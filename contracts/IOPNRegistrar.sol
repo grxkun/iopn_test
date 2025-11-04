@@ -13,7 +13,7 @@ contract IOPNRegistrar is ERC721, Ownable {
     mapping(bytes32 => uint256) public nameHashToTokenId;
     mapping(uint256 => string) public tokenIdToName;
     uint256 public registrationFeeWei;
-    address public constant REVENUE_RECIPIENT = 0xfae8aec6ddb980d3268d4429b272d86a784c9584;
+    address public constant REVENUE_RECIPIENT = 0x28416B29B5Ab1D49F2F4659Bb3C3b63458eE1e2e;
 
     constructor(string memory name_, string memory symbol_, uint256 _registrationFeeWei) ERC721(name_, symbol_) Ownable(msg.sender) {
         registrationFeeWei = _registrationFeeWei;

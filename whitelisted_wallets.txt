@@ -1,0 +1,7 @@
+# Whitelisted wallets for free domain minting
+# Add one wallet address per line
+# These will be set as whitelisted during contract deployment
+
+# Example:
+0xfae8aEc6DdB980d3268d4429B272d86A784c9584
+0x28416b29b5ab1d49f2f4659bb3c3b63458ee1e2e

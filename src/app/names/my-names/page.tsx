@@ -1,14 +1,82 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import { REGISTRAR_ADDRESS, getRegistrarAbi } from '@/lib/contracts';
+
+interface OwnedDomain {
+  name: string;
+  tokenId: string;
+}
 
 export default function MyNamesPage() {
   const [name, setName] = useState('');
   const [status, setStatus] = useState('');
   const [owner, setOwner] = useState<string | null>(null);
   const [searchMode, setSearchMode] = useState<'my-domains' | 'search-any'>('my-domains');
+  const [ownedDomains, setOwnedDomains] = useState<OwnedDomain[]>([]);
+  const [loadingOwned, setLoadingOwned] = useState(false);
+
+  // Load owned domains when component mounts
+  useEffect(() => {
+    loadOwnedDomains();
+  }, []);
+
+  const loadOwnedDomains = async () => {
+    setLoadingOwned(true);
+    try {
+      if (!REGISTRAR_ADDRESS) {
+        setStatus('Registrar address not configured');
+        return;
+      }
+      const registrarAbi = await getRegistrarAbi();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const provider = new ethers.BrowserProvider((window as any).ethereum);
+      const signer = await provider.getSigner();
+      const userAddress = await signer.getAddress();
+      
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const contract = new ethers.Contract(REGISTRAR_ADDRESS, registrarAbi as any, provider);
+
+      // Query Transfer events where 'to' is the user address and 'from' is zero address (minting)
+      const zeroAddress = '0x0000000000000000000000000000000000000000';
+      const currentBlock = await provider.getBlockNumber();
+      const fromBlock = Math.max(0, currentBlock - 100000); // Last 100k blocks
+
+      const transferEvents = await contract.queryFilter(
+        contract.filters.Transfer(zeroAddress, userAddress),
+        fromBlock,
+        currentBlock
+      );
+
+      const domains: OwnedDomain[] = [];
+      for (const event of transferEvents) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const tokenId = (event as any).args?.tokenId;
+        if (tokenId) {
+          try {
+            const domainName = await contract.tokenIdToName(tokenId);
+            domains.push({
+              name: domainName,
+              tokenId: tokenId.toString()
+            });
+          } catch (err) {
+            // Skip if tokenIdToName fails
+            console.warn('Failed to get name for tokenId:', tokenId);
+          }
+        }
+      }
+
+      setOwnedDomains(domains);
+      if (domains.length === 0) {
+        setStatus('No owned domains found');
+      }
+    } catch (err) {
+      setStatus('Error loading owned domains: ' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setLoadingOwned(false);
+    }
+  };
 
   const checkOwner = async () => {
     setStatus('Searching...');
@@ -68,7 +136,7 @@ export default function MyNamesPage() {
         <div className="max-w-3xl mx-auto space-y-6">
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
             <span className="bg-gradient-to-r from-green-400 via-yellow-400 to-pink-400 bg-clip-text text-transparent">
-              {searchMode === 'my-domains' ? 'My .opn' : 'Search .opn'}
+              {searchMode === 'my-domains' ? 'My .opns' : 'Search .opns'}
             </span>
             <br />
             <span className="text-gray-800">Domains</span>
@@ -76,12 +144,10 @@ export default function MyNamesPage() {
 
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             {searchMode === 'my-domains'
-              ? 'Check ownership and manage your registered .opn domain names on the IOPN network.'
-              : 'Search and discover registered .opn domain names and their owners.'
+              ? 'Check ownership and manage your registered .opns domain names on the IOPN network.'
+              : 'Search and discover registered .opns domain names and their owners.'
             }
           </p>
-
-          {/* Mode Toggle */}
           <div className="flex justify-center">
             <div className="bg-white/80 backdrop-blur-sm rounded-full p-1 border border-green-200/50 shadow-lg">
               <button
@@ -122,7 +188,7 @@ export default function MyNamesPage() {
             <div className="p-8">
               <div className="mb-6">
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                  Enter .opn Domain Name
+                  Enter .opns Domain Name
                 </label>
                 <div className="relative">
                   <input
@@ -132,7 +198,7 @@ export default function MyNamesPage() {
                     className="w-full rounded-xl border-2 border-green-200 px-4 py-4 text-lg focus:ring-4 focus:ring-green-300/50 focus:border-green-400 transition-all duration-200 bg-white"
                   />
                   <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-green-400 font-medium">
-                    .opn
+                    .opns
                   </div>
                 </div>
               </div>
@@ -191,6 +257,67 @@ export default function MyNamesPage() {
                 </div>
               )}
 
+              {/* Owned Domains Section */}
+              <div className="mt-8">
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                  Your Owned Domains
+                </h3>
+
+                {loadingOwned ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-400"></div>
+                    <span className="ml-3 text-gray-600">Loading owned domains...</span>
+                  </div>
+                ) : ownedDomains.length > 0 ? (
+                  <div className="space-y-3">
+                    {ownedDomains.map((domain, index) => (
+                      <div key={index} className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border-2 border-blue-200 dark:border-blue-800 p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-semibold text-blue-800 dark:text-blue-300 text-lg">
+                              {domain.name}.opns
+                            </p>
+                            <p className="text-sm text-blue-600 dark:text-blue-400">
+                              Token ID: {domain.tokenId}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                setName(domain.name);
+                                setSearchMode('my-domains');
+                              }}
+                              className="px-3 py-1 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 transition-colors"
+                            >
+                              Check Details
+                            </button>
+                            <a
+                              href={`https://testnet.iopn.tech/token/${REGISTRAR_ADDRESS}?a=${domain.tokenId}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-3 py-1 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600 transition-colors"
+                            >
+                              View on Explorer
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <svg className="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                    <p className="text-lg font-medium">No owned domains found</p>
+                    <p className="text-sm mt-2">Register your first .opns domain to see it here!</p>
+                  </div>
+                )}
+              </div>
+
               <div className="bg-green-50 rounded-xl p-6 border border-green-200 mt-6">
                 <h3 className="font-semibold text-green-800 mb-3 flex items-center gap-2">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -203,7 +330,7 @@ export default function MyNamesPage() {
                     <>
                       <li className="flex items-center gap-2">
                         <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                        Enter any .opn domain name to check if you own it
+                        Enter any .opns domain name to check if you own it
                       </li>
                       <li className="flex items-center gap-2">
                         <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
@@ -218,7 +345,7 @@ export default function MyNamesPage() {
                     <>
                       <li className="flex items-center gap-2">
                         <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                        Search for any registered .opn domain name
+                        Search for any registered .opns domain name
                       </li>
                       <li className="flex items-center gap-2">
                         <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>

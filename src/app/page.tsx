@@ -35,7 +35,7 @@ const Index = () => {
           </h1>
 
           <p className="text-xl text-gray-700 max-w-2xl mx-auto">
-            Register your unique .opn domain and establish your presence on the decentralized web.
+            Register your unique .opns domain and establish your presence on the decentralized web.
             Simple, secure, and yours forever.
           </p>
 

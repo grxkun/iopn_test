@@ -19,7 +19,7 @@ const solc = require('solc');
 const { ethers } = require('ethers');
 
 function usage() {
-  console.log('Usage: node scripts/deploy-name-registrar.js [--compile-only] [--deploy] [--rpc RPC_URL] [--key PRIVATE_KEY]');
+  console.log('Usage: node scripts/deploy-name-registrar.js [--compile-only] [--deploy] [--rpc RPC_URL] [--key PRIVATE_KEY] [--whitelist "addr1,addr2"]');
 }
 
 function parseArgs() {
@@ -41,7 +41,7 @@ async function compileContracts() {
   const contractsDir = path.join(__dirname, '..', 'contracts');
   const sources = {};
   fs.readdirSync(contractsDir).forEach(file => {
-    if (file.endsWith('.sol')) {
+    if (file.endsWith('.sol') && !file.includes('.flat')) {
       const full = path.join(contractsDir, file);
       sources[file] = { content: fs.readFileSync(full, 'utf8') };
     }
@@ -117,6 +117,18 @@ async function main() {
   const key = argv.key || process.env.PRIVATE_KEY;
   const compileOnly = argv['compile-only'] || argv['compile'] || false;
   const doDeploy = argv.deploy || false;
+  const whitelistStr = argv.whitelist || process.env.WHITELIST || '';
+  let whitelisted = whitelistStr ? whitelistStr.split(',').map(addr => addr.trim()) : [];
+
+  // Also read from whitelisted_wallets.txt if it exists
+  const whitelistFile = path.join(__dirname, '..', 'whitelisted_wallets.txt');
+  if (fs.existsSync(whitelistFile)) {
+    const fileContent = fs.readFileSync(whitelistFile, 'utf8');
+    const fileAddresses = fileContent.split('\n')
+      .map(line => line.trim())
+      .filter(line => line && !line.startsWith('#'));
+    whitelisted = whitelisted.concat(fileAddresses);
+  }
   const feeTokens = argv.fee || process.env.REGISTRATION_FEE || '0';
   // convert token amount (e.g., "1") to wei string
   const feeWei = ethers.parseUnits(feeTokens.toString(), 18).toString();
@@ -153,8 +165,8 @@ async function main() {
   }
 
   const factoryRegistrar = new ethers.ContractFactory(registrarData.abi, registrarData.bytecode, wallet);
-  console.log('Deploying IOPNRegistrar... with registration fee (wei):', feeWei);
-  const registrar = await factoryRegistrar.deploy("IOPN Registrar", "IOPN", feeWei);
+  console.log('Deploying IOPNS Registrar...');
+  const registrar = await factoryRegistrar.deploy("IOPNS Registrar", "IOPNS");
   console.log('Registrar tx:', registrar.deploymentTransaction?.hash || 'pending...');
   await registrar.deploymentTransaction().wait();
   try { if (typeof registrar.waitForDeployment === 'function') await registrar.waitForDeployment(); } catch(err){ console.warn(err); }
@@ -168,6 +180,17 @@ async function main() {
   await resolver.deploymentTransaction().wait();
   try { if (typeof resolver.waitForDeployment === 'function') await resolver.waitForDeployment(); } catch(err){ console.warn(err); }
   console.log('Resolver address:', resolver.target || resolver.address);
+
+  // Set whitelisted addresses if provided
+  if (whitelisted.length > 0) {
+    console.log('Setting whitelisted addresses...');
+    for (const addr of whitelisted) {
+      console.log('Whitelisting:', addr);
+      const tx = await registrar.setWhitelisted(addr, true);
+      await tx.wait();
+    }
+    console.log('Whitelisted', whitelisted.length, 'addresses');
+  }
 
   console.log('\nDeployment complete. Save these addresses for the frontend.');
   console.log('REGISTRAR_ADDRESS=', registrar.target || registrar.address);
