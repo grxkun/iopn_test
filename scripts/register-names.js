@@ -57,7 +57,7 @@ async function main() {
       console.log(`✅ Transaction sent: ${tx.hash}`);
 
       await tx.wait();
-      console.log(`🎉 ${domain}.opns registered successfully!`);
+      console.log(`✅ ${domain}.opns registered successfully!`);
 
       // Verify ownership
       const newTokenId = await contract.nameToTokenId(domain);

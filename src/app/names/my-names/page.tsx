@@ -38,16 +38,28 @@ export default function MyNamesPage() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const contract = new ethers.Contract(REGISTRAR_ADDRESS, registrarAbi as any, provider);
 
-      // Query Transfer events where 'to' is the user address and 'from' is zero address (minting)
-      const zeroAddress = '0x0000000000000000000000000000000000000000';
+      // Query Transfer events in chunks to avoid block range limits
       const currentBlock = await provider.getBlockNumber();
+      const chunkSize = 10000; // 10k blocks max per query
       const fromBlock = Math.max(0, currentBlock - 100000); // Last 100k blocks
 
-      const transferEvents = await contract.queryFilter(
-        contract.filters.Transfer(zeroAddress, userAddress),
-        fromBlock,
-        currentBlock
-      );
+      const transferEvents: any[] = [];
+      
+      for (let startBlock = fromBlock; startBlock <= currentBlock; startBlock += chunkSize) {
+        const endBlock = Math.min(currentBlock, startBlock + chunkSize - 1);
+        
+        try {
+          const chunkEvents = await contract.queryFilter(
+            contract.filters.Transfer('0x0000000000000000000000000000000000000000', userAddress),
+            startBlock,
+            endBlock
+          );
+          transferEvents.push(...chunkEvents);
+        } catch (error) {
+          console.warn(`Failed to query blocks ${startBlock}-${endBlock}:`, error);
+          // Continue with other chunks
+        }
+      }
 
       const domains: OwnedDomain[] = [];
       for (const event of transferEvents) {

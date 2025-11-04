@@ -134,7 +134,7 @@ export default function RegisterPage() {
       setTxHash(tx.hash);
       setStatus('Waiting for confirmation...');
       await tx.wait();
-      setStatus('Registration successful! 🎉');
+      setStatus('Registration successful! ✅');
       setAvailability('taken'); // Now it's taken
     } catch (err) {
       setStatus('Registration failed: ' + (err instanceof Error ? err.message : String(err)));
