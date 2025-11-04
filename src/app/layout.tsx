@@ -31,7 +31,7 @@ export default function RootLayout({
       >
         <WalletProvider>
           <Header />
-          <div className="min-h-screen bg-gradient-to-b from-pink-50 via-yellow-50 to-purple-50 dark:from-[#120323] dark:via-[#1b0736] dark:to-[#260a4a] text-gray-900 dark:text-gray-100">
+          <div className="min-h-screen bg-gradient-to-b from-purple-50 via-indigo-50 to-purple-100 dark:from-[#1a0b2e] dark:via-[#2d1b4e] dark:to-[#3d2563] text-gray-900 dark:text-gray-100">
             {children}
           </div>
         </WalletProvider>

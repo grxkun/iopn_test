@@ -21,27 +21,27 @@ export default function Home() {
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50 via-yellow-50 to-purple-50 dark:from-pink-100 dark:via-yellow-100 dark:to-purple-100">
+    <div className="min-h-screen bg-gradient-to-b from-purple-50 via-indigo-50 to-purple-100 dark:from-[#1a0b2e] dark:via-[#2d1b4e] dark:to-[#3d2563]">
       {/* Hero Section */}
-      <section className="container mx-auto px-4 pt-20 pb-32 text-center relative overflow-hidden bg-gradient-to-r from-pink-300 via-yellow-300 to-purple-300">
+      <section className="container mx-auto px-4 pt-20 pb-32 text-center relative overflow-hidden bg-gradient-to-r from-purple-400 via-indigo-400 to-purple-500">
         <div className="absolute inset-0 bg-white/30"></div>
         <div className="max-w-4xl mx-auto space-y-8 relative z-10">
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white">
-            <span className="bg-gradient-to-r from-pink-400 via-yellow-400 to-purple-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-white via-purple-100 to-indigo-100 bg-clip-text text-transparent">
               Your Identity
             </span>
             <br />
             <span className="text-white">on IOPN Network</span>
           </h1>
 
-          <p className="text-xl text-gray-700 max-w-2xl mx-auto">
+          <p className="text-xl text-purple-100 max-w-2xl mx-auto">
             Register your unique .opns domain and establish your presence on the decentralized web.
             Simple, secure, and yours forever.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
             <Link href="/names/register">
-              <button className="bg-white text-pink-600 px-8 py-3 rounded-full font-semibold text-lg hover:bg-pink-50 transition-colors shadow-lg hover:shadow-xl">
+              <button className="bg-white text-purple-600 px-8 py-3 rounded-full font-semibold text-lg hover:bg-purple-50 transition-colors shadow-lg hover:shadow-xl">
                 Get Your Domain
               </button>
             </Link>
