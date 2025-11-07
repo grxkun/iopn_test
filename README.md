@@ -1,4 +1,4 @@
-# IOPN Platform
+# IOPN Community domains
 
 A web platform for interacting with the IOPN testnet blockchain network, featuring name registration, token deployment, and trading capabilities.
 
@@ -23,7 +23,7 @@ A web platform for interacting with the IOPN testnet blockchain network, featuri
 - **IOPN Resolver**: `0x8f601f80B1B84c656aad074627db879f36f1627A`
 - **Registration Fee**: 0.01 OPN tokens
 
-## Getting Started
+## Development Setup
 
 ### Local Development
 
@@ -46,21 +46,6 @@ A web platform for interacting with the IOPN testnet blockchain network, featuri
 4. Open [http://localhost:3000](http://localhost:3000) with your browser.
 
 5. Connect your wallet and start using the platform.
-
-### Production Deployment
-
-The app is ready for deployment to Vercel or any other hosting platform:
-
-1. **Vercel Deployment**:
-   ```bash
-   npm install -g vercel
-   vercel login
-   vercel --prod
-   ```
-
-2. **Set Environment Variables in Vercel**:
-   - `NEXT_PUBLIC_REGISTRAR_ADDRESS`: `0x336635Bf4E36F9B5594A62C0109e4Bf7b0c8AFcD`
-   - `NEXT_PUBLIC_RESOLVER_ADDRESS`: `0x8f601f80B1B84c656aad074627db879f36f1627A`
 
 ## Name Service Usage
 

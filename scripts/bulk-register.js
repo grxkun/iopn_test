@@ -55,7 +55,7 @@ async function main() {
     domains.push(i.toString().padStart(3, '0')); // 000, 001, 002, ..., 020
   }
 
-  console.log(`Registering domains: ${domains[0]}.opns through ${domains[domains.length-1]}.opns`);
+  console.log(`Registering domains: ${domains[0]}.opn through ${domains[domains.length-1]}.opn`);
   console.log(`\n🔄 Starting bulk registration of ${domains.length} domains...`);
   console.log('='.repeat(60));
 
@@ -64,12 +64,12 @@ async function main() {
 
   for (const domain of domains) {
     try {
-      console.log(`\n📝 Processing: ${domain}.opns`);
+      console.log(`\n📝 Processing: ${domain}.opn`);
 
       // Check if name is available
       const tokenId = await contract.nameToTokenId(domain);
       if (tokenId && tokenId !== 0n) {
-        console.log(`⏭️  ${domain}.opns already registered (Token ID: ${tokenId})`);
+        console.log(`⏭️  ${domain}.opn already registered (Token ID: ${tokenId})`);
         skipCount++;
         continue;
       }
@@ -82,12 +82,12 @@ async function main() {
         fee = length === 3 ? ethers.parseEther('3') : length === 4 ? ethers.parseEther('2') : ethers.parseEther('1');
       }
 
-      console.log(`💰 Registering ${domain}.opns (fee: ${ethers.formatEther(fee)} OPN, whitelisted: ${isWhitelisted})...`);
+      console.log(`💰 Registering ${domain}.opn (fee: ${ethers.formatEther(fee)} OPN, whitelisted: ${isWhitelisted})...`);
       const tx = await contract.register(domain, { value: fee });
       console.log(`✅ Transaction sent: ${tx.hash}`);
 
       await tx.wait();
-      console.log(`✅ ${domain}.opns registered successfully!`);
+      console.log(`🎉 ${domain}.opn registered successfully!`);
 
       // Verify ownership
       const newTokenId = await contract.nameToTokenId(domain);
@@ -101,7 +101,7 @@ async function main() {
       await new Promise(resolve => setTimeout(resolve, 100));
 
     } catch (error) {
-      console.error(`❌ Failed to register ${domain}.opns:`, error.message);
+      console.error(`❌ Failed to register ${domain}.opn:`, error.message);
     }
   }
 

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { WalletProvider } from '@/components/WalletProvider';
+import { ThemeProvider } from '@/components/ThemeProvider';
 import Header from '@/components/Header';
 
 const geistSans = Geist({
@@ -15,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "IOPN Platform",
+  title: "IOPN Community domains",
   description: "Platform for IOPN network: deploy tokens, batch sender, buy/sell",
 };
 
@@ -29,12 +30,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <WalletProvider>
+        <ThemeProvider>
           <Header />
-          <div className="min-h-screen bg-gradient-to-b from-purple-50 via-indigo-50 to-purple-100 dark:from-[#1a0b2e] dark:via-[#2d1b4e] dark:to-[#3d2563] text-gray-900 dark:text-gray-100">
-            {children}
-          </div>
-        </WalletProvider>
+          <WalletProvider>
+            <div className="min-h-screen bg-gradient-to-b from-light-bg-start via-light-bg-middle to-light-bg-end dark:from-dark-bg-start dark:via-dark-bg-middle dark:to-dark-bg-end text-gray-900 dark:text-gray-100">
+              {children}
+            </div>
+          </WalletProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

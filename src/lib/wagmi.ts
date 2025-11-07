@@ -29,7 +29,7 @@ const iopnTestnet = defineChain({
 });
 
 export const config = getDefaultConfig({
-  appName: 'IOPN Platform',
+  appName: 'IOPN Community domains',
   projectId: 'your-project-id', // Replace with actual project ID from WalletConnect
   chains: [
     iopnTestnet,

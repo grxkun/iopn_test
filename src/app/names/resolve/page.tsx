@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import { ethers } from 'ethers';
 import { RESOLVER_ADDRESS, getResolverAbi } from '@/lib/contracts';
+import DomainNFT from '@/components/DomainNFT';
 
 export default function ResolvePage() {
   const [name, setName] = useState('');
-  const [result, setResult] = useState<string | null>(null);
+  const [result, setResult] = useState<{ address: string; text: string } | null>(null);
   const [status, setStatus] = useState('');
 
   const doResolve = async () => {
@@ -25,7 +26,7 @@ export default function ResolvePage() {
 
       const addr = await contract.resolveAddress(normalized);
       const text = await contract.resolveText(normalized);
-      setResult(`address: ${addr} | text: ${text}`);
+      setResult({ address: addr, text });
       setStatus('');
     } catch (err) {
       setStatus('Error: ' + (err instanceof Error ? err.message : String(err)));
@@ -33,12 +34,12 @@ export default function ResolvePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-orange-50 via-pink-50 to-purple-50">
+    <div className="min-h-screen">
       {/* Hero Section */}
       <section className="container mx-auto px-4 pt-20 pb-16 text-center">
         <div className="max-w-3xl mx-auto space-y-6">
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-            <span className="bg-gradient-to-r from-orange-400 via-pink-400 to-purple-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-orange-400 via-pink-400 to-purple-400 dark:from-purple-300 dark:via-fuchsia-300 dark:to-pink-300 bg-clip-text text-transparent">
               Resolve .opns
             </span>
             <br />
@@ -54,8 +55,8 @@ export default function ResolvePage() {
       {/* Resolve Form */}
       <section className="container mx-auto px-4 pb-20">
         <div className="max-w-2xl mx-auto">
-          <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-orange-200/50 overflow-hidden">
-            <div className="bg-gradient-to-r from-orange-300 via-pink-300 to-purple-300 p-6">
+          <div className="bg-white/90 dark:bg-purple-900/40 backdrop-blur-sm rounded-3xl shadow-xl border border-orange-200/50 dark:border-purple-700/60 overflow-hidden">
+            <div className="bg-gradient-to-r from-orange-300 via-pink-300 to-purple-300 dark:from-[#2a0d56] dark:via-[#3a0e6f] dark:to-[#4c1291] p-6">
               <h2 className="text-2xl font-bold text-white text-center">Domain Resolution</h2>
             </div>
 
@@ -69,7 +70,7 @@ export default function ResolvePage() {
                     value={name}
                     onChange={e => setName(e.target.value)}
                     placeholder="Enter domain name (e.g., alice)"
-                    className="w-full rounded-xl border-2 border-orange-200 px-4 py-4 text-lg focus:ring-4 focus:ring-orange-300/50 focus:border-orange-400 transition-all duration-200 bg-white"
+                    className="w-full rounded-xl border-2 border-orange-200 dark:border-purple-700 px-4 py-4 text-lg focus:ring-4 focus:ring-orange-300/50 dark:focus:ring-purple-500/40 focus:border-orange-400 dark:focus:border-purple-400 transition-all duration-200 bg-white dark:bg-[#120323] text-gray-900 dark:text-purple-100 placeholder-gray-400 dark:placeholder-purple-400"
                   />
                   <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-orange-400 font-medium">
                     .opns
@@ -80,7 +81,7 @@ export default function ResolvePage() {
               <div className="mb-6">
                 <button
                   onClick={doResolve}
-                  className="w-full px-6 py-4 bg-gradient-to-r from-orange-400 to-pink-400 text-white rounded-xl font-semibold text-lg hover:from-orange-500 hover:to-pink-500 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  className="w-full px-6 py-4 bg-gradient-to-r from-orange-400 to-pink-400 dark:from-purple-500 dark:to-fuchsia-600 text-white rounded-xl font-semibold text-lg hover:from-orange-500 hover:to-pink-500 dark:hover:from-purple-600 dark:hover:to-fuchsia-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                 >
                   <div className="flex items-center justify-center gap-3">
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -112,40 +113,30 @@ export default function ResolvePage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
-                    <h3 className="font-semibold text-orange-800 dark:text-orange-300 text-lg">Resolution Results</h3>
+                    <h3 className="font-semibold text-orange-800 dark:text-orange-300 text-lg">Domain NFT</h3>
                   </div>
-                  <div className="space-y-4">
-                    {result.split(' | ').map((item, index) => {
-                      const [label, value] = item.split(': ');
-                      return (
-                        <div key={index} className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-orange-200 dark:border-orange-700">
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1 capitalize">{label}:</p>
-                          <p className="font-mono text-sm text-gray-900 dark:text-gray-100 break-all">{value}</p>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <DomainNFT name={name} address={result.address} text={result.text} />
                 </div>
               )}
 
-              <div className="bg-orange-50 rounded-xl p-6 border border-orange-200 mt-6">
-                <h3 className="font-semibold text-orange-800 mb-3 flex items-center gap-2">
+              <div className="bg-orange-50 dark:bg-[#1f0a3a] rounded-xl p-6 border border-orange-200 dark:border-purple-800 mt-6">
+                <h3 className="font-semibold text-orange-800 dark:text-purple-100 mb-3 flex items-center gap-2">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   What is Domain Resolution?
                 </h3>
-                <ul className="space-y-2 text-sm text-orange-700">
+                <ul className="space-y-2 text-sm text-orange-700 dark:text-purple-200">
                   <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 bg-orange-500 rounded-full"></span>
+                    <span className="w-1.5 h-1.5 bg-orange-500 dark:bg-purple-500 rounded-full"></span>
                     Converts human-readable .opns names to wallet addresses
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 bg-orange-500 rounded-full"></span>
+                    <span className="w-1.5 h-1.5 bg-orange-500 dark:bg-purple-500 rounded-full"></span>
                     Shows associated text records and metadata
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 bg-orange-500 rounded-full"></span>
+                    <span className="w-1.5 h-1.5 bg-orange-500 dark:bg-purple-500 rounded-full"></span>
                     Essential for sending crypto to domain names
                   </li>
                 </ul>

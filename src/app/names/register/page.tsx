@@ -3,22 +3,25 @@
 import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import { REGISTRAR_ADDRESS, getRegistrarAbi } from '@/lib/contracts';
+import { useAccount } from 'wagmi';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 export default function RegisterPage() {
+  const { address, isConnected, chain } = useAccount();
   const [name, setName] = useState('');
   const [status, setStatus] = useState('');
   const [availability, setAvailability] = useState<'unknown' | 'available' | 'taken' | 'invalid'>('unknown');
   const [txHash, setTxHash] = useState('');
   const [isChecking, setIsChecking] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [justRegistered, setJustRegistered] = useState(false);
 
   // Calculate registration price based on name length
   const calculateRegistrationPrice = (domainName: string): number => {
     const length = domainName.trim().length;
-    if (length === 1) return 6;
-    if (length === 2) return 4;
     if (length === 3) return 3;
-    return 2; // 4 and beyond
+    if (length === 4) return 2;
+    return 1; // 5 and beyond
   };
 
   // Auto-check availability when name changes (debounced)
@@ -28,6 +31,8 @@ export default function RegisterPage() {
       setStatus('');
       return;
     }
+
+    setJustRegistered(false); // Reset when name changes
 
     const timeoutId = setTimeout(() => {
       checkAvailability();
@@ -42,6 +47,23 @@ export default function RegisterPage() {
     setAvailability('unknown');
 
     try {
+      // 1) Try Python-backed API pre-validation (dev/local only)
+      try {
+        const resp = await fetch('/api/check-name', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name })
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data && data.is_valid === false) {
+            setStatus(data.reason || 'Invalid name');
+            setAvailability('invalid');
+            return; // stop early if invalid
+          }
+        }
+      } catch { /* ignore and fallback to client-side checks */ }
+
       if (!REGISTRAR_ADDRESS) {
         setStatus('Registrar address not configured');
         setAvailability('unknown');
@@ -64,7 +86,7 @@ export default function RegisterPage() {
         return;
       }
 
-      // Basic client-side validation
+      // 2) Basic client-side validation (fallback and also runs in prod)
       if (normalized.length < 3 || normalized.length > 32) {
         setStatus('Name must be 3-32 characters long');
         setAvailability('invalid');
@@ -79,7 +101,7 @@ export default function RegisterPage() {
         return;
       }
 
-      // check availability on chain
+  // 3) check availability on chain
       const tokenId = await contract.nameToTokenId(normalized);
 
       if (tokenId && tokenId !== BigInt(0)) {
@@ -118,24 +140,42 @@ export default function RegisterPage() {
         return;
       }
 
-      const registrarAbi = await getRegistrarAbi();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const provider = new ethers.BrowserProvider((window as any).ethereum);
-      const signer = await provider.getSigner();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const contract = new ethers.Contract(REGISTRAR_ADDRESS, registrarAbi as any, signer);
+  const registrarAbi = await getRegistrarAbi();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const provider = new ethers.BrowserProvider((window as any).ethereum);
+  const signer = await provider.getSigner();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const contract = new ethers.Contract(REGISTRAR_ADDRESS, registrarAbi as any, signer);
 
-      const normalized = name.trim().toLowerCase();
-      const price = calculateRegistrationPrice(normalized);
-      const priceWei = ethers.parseEther(price.toString());
+  // IMPORTANT: calculate fee based on name length and whitelist status
+  const normalized = name.trim().toLowerCase();
+  const length = normalized.length;
+  let feeWei = BigInt(0);
+  if (length >= 3) {
+    // Check if user is whitelisted
+    let isWhitelisted = false;
+    try {
+      isWhitelisted = await contract.whitelisted(await signer.getAddress());
+    } catch (err) {
+      console.warn('Could not check whitelist status:', err);
+    }
+    
+    if (!isWhitelisted) {
+      feeWei = length === 3 ? ethers.parseEther('3') :
+               length === 4 ? ethers.parseEther('2') :
+               ethers.parseEther('1');
+    }
+  }
 
-      setStatus(`Sending registration transaction (fee: ${price} OPN)...`);
-      const tx = await contract.register(normalized, { value: priceWei });
+  setStatus(`Sending registration transaction (fee: ${ethers.formatEther(feeWei)} OPN)...`);
+  const tx = await contract.register(normalized, { value: feeWei });
       setTxHash(tx.hash);
       setStatus('Waiting for confirmation...');
       await tx.wait();
-      setStatus('Registration successful! ✅');
+      setStatus('Registration successful! 🎉');
       setAvailability('taken'); // Now it's taken
+      setJustRegistered(true);
+      setStatus(''); // Clear status since tx hash shows success
     } catch (err) {
       setStatus('Registration failed: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
@@ -153,6 +193,7 @@ export default function RegisterPage() {
   };
 
   const getAvailabilityIcon = () => {
+    if (justRegistered) return '✅';
     switch (availability) {
       case 'available': return '✅';
       case 'taken': return '❌';
@@ -162,12 +203,12 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50 via-yellow-50 to-purple-50">
+    <div className="min-h-screen">
       {/* Hero Section */}
       <section className="container mx-auto px-4 pt-20 pb-16 text-center">
         <div className="max-w-3xl mx-auto space-y-6">
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-            <span className="bg-gradient-to-r from-pink-400 via-yellow-400 to-purple-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-pink-400 via-yellow-400 to-purple-400 dark:from-purple-300 dark:via-fuchsia-300 dark:to-pink-300 bg-clip-text text-transparent">
               Register Your
             </span>
             <br />
@@ -183,14 +224,14 @@ export default function RegisterPage() {
       {/* Registration Form */}
       <section className="container mx-auto px-4 pb-20">
         <div className="max-w-2xl mx-auto">
-          <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-pink-200/50 overflow-hidden">
-            <div className="bg-gradient-to-r from-pink-300 via-yellow-300 to-purple-300 p-6">
+          <div className="bg-purple-900/40 backdrop-blur-sm rounded-3xl shadow-xl border border-purple-700/60 overflow-hidden">
+            <div className="bg-gradient-to-r from-[#2a0d56] via-[#3a0e6f] to-[#4c1291] p-6">
               <h2 className="text-2xl font-bold text-white text-center">Domain Registration</h2>
             </div>
 
             <div className="p-8">
               <div className="mb-6">
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                <label className="block text-sm font-semibold text-purple-100 mb-3">
                   Choose Your .opns Name
                 </label>
                 <div className="relative">
@@ -198,15 +239,15 @@ export default function RegisterPage() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Enter your desired name (e.g., alice)"
-                    className="w-full rounded-xl border-2 border-pink-200 px-4 py-4 text-lg focus:ring-4 focus:ring-pink-300/50 focus:border-pink-400 transition-all duration-200 bg-white pr-20"
+                    className="w-full rounded-xl border-2 border-purple-700 dark:border-purple-700 px-4 py-4 text-lg focus:ring-4 focus:ring-purple-500/40 dark:focus:ring-purple-500/40 focus:border-purple-400 dark:focus:border-purple-400 transition-all duration-200 bg-white dark:bg-[#120323] text-gray-900 dark:text-purple-100 placeholder-gray-400 dark:placeholder-purple-400 pr-20"
                   />
                   <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
                     {availability !== 'unknown' && name.trim() && (
-                      <span className={`text-xl ${availability === 'available' ? 'text-green-500' : availability === 'taken' ? 'text-red-500' : 'text-orange-500'}`}>
-                        {availability === 'available' ? '✓' : availability === 'taken' ? '✗' : '⚠'}
+                      <span className={`text-xl ${justRegistered ? 'text-green-500' : availability === 'available' ? 'text-green-400' : availability === 'taken' ? 'text-red-400' : 'text-orange-400'}`}>
+                        {justRegistered ? '✅' : availability === 'available' ? '✓' : availability === 'taken' ? '✗' : '⚠'}
                       </span>
                     )}
-                    <span className="text-pink-400 font-medium">.opns</span>
+                    <span className="text-purple-300 font-medium">.opns</span>
                   </div>
                 </div>
               </div>
@@ -214,10 +255,10 @@ export default function RegisterPage() {
               {availability !== 'unknown' && (
                 <div className={`mb-6 p-4 rounded-xl border-2 transition-all duration-200 ${
                   availability === 'available'
-                    ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-800 dark:text-green-300'
+                    ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-900 dark:text-green-400'
                     : availability === 'taken'
-                    ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300'
-                    : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800 text-orange-800 dark:text-orange-300'
+                    ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-900 dark:text-red-400'
+                    : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800 text-orange-900 dark:text-orange-400'
                 }`}>
                   <div className="flex items-center gap-3">
                     <div className="text-2xl">{getAvailabilityIcon()}</div>
@@ -232,7 +273,7 @@ export default function RegisterPage() {
                 <button
                   onClick={checkAvailability}
                   disabled={isChecking || !name.trim()}
-                  className="flex-1 px-6 py-4 bg-gradient-to-r from-pink-400 to-pink-500 text-white rounded-xl font-semibold text-lg hover:from-pink-500 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  className="flex-1 px-6 py-4 bg-gradient-to-r from-purple-500 to-fuchsia-600 text-white rounded-xl font-semibold text-lg hover:from-purple-600 hover:to-fuchsia-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                 >
                   {isChecking ? (
                     <div className="flex items-center justify-center gap-2">
@@ -247,7 +288,10 @@ export default function RegisterPage() {
                 <button
                   onClick={register}
                   disabled={isRegistering || availability !== 'available'}
-                  className="flex-1 px-6 py-4 bg-gradient-to-r from-purple-400 to-purple-500 text-white rounded-xl font-semibold text-lg hover:from-purple-500 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  className={`flex-1 px-6 py-4 rounded-xl font-semibold text-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 
+                    ${isRegistering || availability !== 'available' 
+                      ? 'bg-gray-300 text-gray-600 cursor-not-allowed' 
+                      : 'bg-gradient-to-r from-purple-400 to-purple-500 text-white hover:from-purple-500 hover:to-purple-600'}`}
                 >
                   {isRegistering ? (
                     <div className="flex items-center justify-center gap-2">
@@ -255,7 +299,10 @@ export default function RegisterPage() {
                       Registering...
                     </div>
                   ) : (
-                    'Register Domain'
+                    <div className="flex items-center justify-center gap-2">
+                      <span>Register Domain</span>
+                      {availability === 'available' && <span className="text-white">✓</span>}
+                    </div>
                   )}
                 </button>
               </div>
@@ -283,14 +330,30 @@ export default function RegisterPage() {
                 </div>
               )}
 
-              <div className="bg-pink-50 rounded-xl p-6 border border-pink-200">
-                <h3 className="font-semibold text-pink-800 mb-3 flex items-center gap-2">
+              <div className="bg-pink-50 dark:bg-[#1f0a3a] rounded-xl p-6 border border-pink-200 dark:border-purple-800">
+                <h3 className="font-semibold text-pink-800 dark:text-purple-100 mb-3 flex items-center gap-2">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   Registration Requirements & Pricing
                 </h3>
-                <ul className="space-y-2 text-sm text-pink-700">
+                <ul className="space-y-2 text-sm text-pink-700 dark:text-purple-200">
+                  <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-pink-500 rounded-full"></span>
+                    <span className="font-semibold">Dapp Status:</span>
+                    {isConnected ? (
+                      <span className="flex items-center gap-2 text-green-700">
+                        <span className="inline-block w-2 h-2 rounded-full bg-green-600"></span>
+                        Connected {address?.slice(0, 6)}...{address?.slice(-4)} {chain?.name ? `on ${chain?.name}` : ''}
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-2 text-orange-700">
+                        <span className="inline-block w-2 h-2 rounded-full bg-orange-500"></span>
+                        Not connected
+                        <span className="ml-2"><ConnectButton label="Connect Wallet" /></span>
+                      </span>
+                    )}
+                  </li>
                   <li className="flex items-center gap-2">
                     <span className="w-1.5 h-1.5 bg-pink-500 rounded-full"></span>
                     Names must be 3-32 characters long
@@ -301,7 +364,7 @@ export default function RegisterPage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="w-1.5 h-1.5 bg-pink-500 rounded-full"></span>
-                    <strong>Pricing:</strong> 1 char = 6 OPN, 2 chars = 4 OPN, 3 chars = 3 OPN, 4+ chars = 2 OPN
+                    <strong>Pricing:</strong> 3 chars = 3 OPN, 4 chars = 2 OPN, 5+ chars = 1 OPN
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="w-1.5 h-1.5 bg-pink-500 rounded-full"></span>

@@ -5,18 +5,20 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
- * IOPN Registrar using OpenZeppelin ERC721.
+ * IOPNS Registrar using OpenZeppelin ERC721.
  * - register(name) mints a token whose id = uint256(keccak256(name)) to msg.sender
  * - owner may transfer tokens using standard ERC721 functions
  */
 contract IOPNRegistrar is ERC721, Ownable {
     mapping(bytes32 => uint256) public nameHashToTokenId;
     mapping(uint256 => string) public tokenIdToName;
-    uint256 public registrationFeeWei;
-    address public constant REVENUE_RECIPIENT = 0x28416B29B5Ab1D49F2F4659Bb3C3b63458eE1e2e;
+    mapping(address => bool) public whitelisted;
+    address public constant REVENUE_RECIPIENT = 0xfae8aEc6DdB980d3268d4429B272d86A784c9584;
 
-    constructor(string memory name_, string memory symbol_, uint256 _registrationFeeWei) ERC721(name_, symbol_) Ownable(msg.sender) {
-        registrationFeeWei = _registrationFeeWei;
+    constructor(string memory name_, string memory symbol_) ERC721(name_, symbol_) Ownable(msg.sender) {}
+
+    function setWhitelisted(address user, bool status) external onlyOwner {
+        whitelisted[user] = status;
     }
 
     function _isValidName(string calldata name) internal pure returns (bool) {
@@ -34,7 +36,14 @@ contract IOPNRegistrar is ERC721, Ownable {
     function register(string calldata name) external payable returns (uint256) {
         require(bytes(name).length > 0, "empty name");
         require(_isValidName(name), "invalid name");
-        require(msg.value >= registrationFeeWei, "insufficient fee");
+
+        // Calculate fee based on name length
+        uint256 length = bytes(name).length;
+        uint256 fee = length == 3 ? 3 ether : length == 4 ? 2 ether : 1 ether;
+        if (whitelisted[msg.sender]) {
+            fee = 0;
+        }
+        require(msg.value >= fee, "insufficient fee");
 
         bytes32 nh = keccak256(abi.encodePacked(name));
         require(nameHashToTokenId[nh] == 0, "name taken");
@@ -44,11 +53,13 @@ contract IOPNRegistrar is ERC721, Ownable {
         tokenIdToName[tokenId] = name;
         _safeMint(msg.sender, tokenId);
 
-        // Send registration fee directly to revenue recipient
-        (bool sent, ) = REVENUE_RECIPIENT.call{ value: registrationFeeWei }("");
-        require(sent, "fee transfer failed");
+        // Send fee directly to revenue recipient if fee > 0
+        if (fee > 0) {
+            (bool sent, ) = REVENUE_RECIPIENT.call{ value: fee }("");
+            require(sent, "fee transfer failed");
+        }
 
-        uint256 excess = msg.value - registrationFeeWei;
+        uint256 excess = msg.value - fee;
         if (excess > 0) {
             (bool refundSent, ) = msg.sender.call{ value: excess }("");
             require(refundSent, "refund failed");
