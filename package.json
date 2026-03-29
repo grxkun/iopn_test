@@ -13,7 +13,7 @@
     "@rainbow-me/rainbowkit": "^2.2.9",
     "dotenv": "^17.2.3",
     "ethers": "^6.15.0",
-    "next": "16.0.1",
+    "next": "16.0.10",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "solc": "^0.8.21",
